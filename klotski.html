@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klotski</title>
+  <style>
+    #klotski-board {
+      width: 100%;
+      height: 100vw;
+      position: relative;
+      background: rgba(0,0,0, 0.2); /* 半透明背景 */
+      border: 2px solid #000;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 4px;
+    }
+
+    .block {
+      background: rgba(0,0,255,0.4); /* 半透明的滑块 */
+      border: 1px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+      cursor: pointer;
+      transition: grid-row-start 0.3s, grid-column-start 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div id="klotski-board">
+    <div class="block block-1" onclick="move(1)">1</div>
+    <div class="block block-2" onclick="move(2)">2</div>
+    <div class="block block-3" onclick="move(3)">3</div>
+    <div class="block block-4" onclick="move(4)">4</div>
+    <div class="block block-5" onclick="move(5)">5</div>
+    <div class="block block-6" onclick="move(6)">6</div>
+    <div class="block block-7" onclick="move(7)">7</div>
+    <div class="block block-8" onclick="move(8)">8</div>
+  </div>
+<script>
+  function isSolvable(positions) {
+    let inversions = 0;
+
+    // 复制数组，保留原始信息
+    let temp = [...positions];
+
+    // 删除空白块的位置
+    temp.splice(8, 1);
+
+    for (let i = 0; i < temp.length; i++) {
+      for (let j = i + 1; j < temp.length; j++) {
+        // 当前数字大于后面的数字，计数器加1
+        if (temp[i] > temp[j]) {
+          inversions++;
+        }
+      }
+    }
+
+    // 对于3x3的华容道游戏，如果逆序对数量是偶数，则初始状态可解
+    return inversions % 2 === 0;
+  }
+
+  const shuffleBlocks = () => {
+    // 初始化滑块的位置数组
+    let positions = Array.from({length: 9}, (v, k) => k); // [0, 1, 2, ..., 15]
+
+    // 使用Fisher-Yates洗牌算法随机位置
+    for (let i = positions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [positions[i], positions[j]] = [positions[j], positions[i]];  // 交换位置
+    }
+
+    // 返回随机的滑块位置
+    return positions;
+  }
+
+  // 假设你的滑块是一个div元素的数组
+  let blocks = document.querySelectorAll('.block');
+
+  // 检查滑块四周是否有空格
+  const checkSurroundings = (blockId) => {
+    // 找出空格的位置
+    const emptySpot = positions[8];
+
+    // 找出滑块的位置
+    const blockPos = positions[blockId];
+
+    // 检查上下左右是否有空格
+    const left = blockPos % 3 !== 0 && blockPos - 1 === emptySpot;
+    const right = blockPos % 3 !== 2 && blockPos + 1 === emptySpot;
+    const up = blockPos >= 3 && blockPos - 3 === emptySpot;
+    const down = blockPos < 6 && blockPos + 3 === emptySpot;
+
+    return { left, right, up, down };
+  };
+
+  let positions = shuffleBlocks();
+  // 如果初始状态不可解，则重新洗牌
+  while (!isSolvable(positions)) {
+    positions = shuffleBlocks();
+  }
+  blocks.forEach((block, i) => {
+    // 根据随机的位置设置滑块的grid-row和grid-column属性
+    block.style.gridColumnStart = positions[i] % 3 + 1;
+    block.style.gridRowStart = Math.floor(positions[i] / 3) + 1;
+  });
+
+  const check = () => {
+    // 检查滑块是否按照正确的顺序排列
+    return positions.every((v, i) => v === i);
+  }
+
+  const move = (id) => {
+    const { left, right, up, down } = checkSurroundings(id - 1);
+
+    // 如果滑块可以移动，则交换滑块和空格的位置
+    if (left || right || up || down) {
+      if  (left) {
+        let position = positions[id - 1];
+        positions[id - 1] = position - 1;
+        positions[8] = position;
+      } else if (right) {
+        let position = positions[id - 1];
+        positions[id - 1] = position + 1;
+        positions[8] = position;
+      } else if (up) {
+        let position = positions[id - 1];
+        positions[id - 1] = position - 3;
+        positions[8] = position;
+      } else if (down) {
+        let position = positions[id - 1];
+        positions[id - 1] = position + 3;
+        positions[8] = position;
+      }
+
+      let block = document.querySelectorAll(`.block-${id}`)[0];
+      console.log(block);
+      block.style.gridColumnStart = positions[id - 1] % 3 + 1;
+      block.style.gridRowStart = Math.floor(positions[id - 1] / 3) + 1;
+
+      if (check()) {
+        setTimeout(() => {
+          alert('You win!');
+          positions = shuffleBlocks();
+          blocks.forEach((block, i) => {
+            // 根据随机的位置设置滑块的grid-row和grid-column属性
+            block.style.gridColumnStart = positions[i] % 3 + 1;
+            block.style.gridRowStart = Math.floor(positions[i] / 3) + 1;
+          });
+        }, 500)
+      }
+    }
+  }
+</script>
+</body>
+</html>
